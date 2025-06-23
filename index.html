@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zombie Shooter</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #111;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin: 10px;
+      border: none;
+      border-radius: 12px;
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #218838;
+      transform: scale(1.05);
+    }
+
+    #menuScreen {
+      display: block;
+      padding: 20px;
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 20px;
+    }
+
+    .hud-box {
+      background: #222;
+      border: 2px solid white;
+      border-radius: 15px;
+      padding: 10px 15px;
+      font-size: 16px;
+    }
+
+    .subtext {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 4px;
+    }
+
+    .title-box {
+      font-size: 32px;
+      padding: 10px 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #6e45e2, #88d3ce);
+      display: inline-block;
+      margin: 20px auto;
+      animation: pulseTitle 2s infinite;
+    }
+
+    @keyframes pulseTitle {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .selected-display {
+      margin: 20px;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .char-emoji {
+      font-size: 64px;
+      animation: floatEmoji 2s infinite ease-in-out;
+    }
+
+    @keyframes floatEmoji {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0); }
+    }
+
+    .char-name {
+      font-size: 20px;
+      margin-top: 5px;
+    }
+
+    .weapon-name {
+      font-size: 16px;
+      margin-top: 5px;
+      color: #00ffcc;
+    }
+
+    .main-btn {
+      font-size: 22px;
+      padding: 15px 30px;
+      margin-top: 15px;
+    }
+
+    .menu-buttons {
+      margin-top: 20px;
+    }
+
+    .menu-btn {
+      background-color: #007bff;
+    }
+
+    .menu-btn:hover {
+      background-color: #0056b3;
+    }
+
+    .popup-screen {
+      display: none;
+      background: #111;
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 20px;
+      border: 2px solid white;
+      border-radius: 15px;
+      z-index: 999;
+      width: 80%;
+      max-width: 600px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    #characters, #weapons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin: 15px 0;
+    }
+
+    .char, .weapon {
+      border: 2px solid transparent;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+      background-color: #222;
+      font-size: 30px;
+      width: 80px;
+      text-align: center;
+    }
+
+    .char:hover, .weapon:hover {
+      background-color: #333;
+    }
+
+    .char.selected, .weapon.selected {
+      border-color: lime;
+      background-color: #2e2e2e;
+    }
+
+    input[type=range] {
+      width: 80%;
+      margin: 20px 0;
+    }
+
+    #gameScreen {
+      display: none;
+      position: relative;
+    }
+
+    #hud {
+      position: absolute;
+      top: 5px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-size: 18px;
+      z-index: 1;
+    }
+
+    #gameCanvas {
+      display: block;
+      margin: 0 auto;
+      border: 3px solid white;
+      background: #222;
+      touch-action: none;
+    }
+
+    #gameOverScreen {
+      display: none;
+      position: absolute;
+      top: 35%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #222;
+      padding: 30px;
+      border: 2px solid white;
+      border-radius: 10px;
+      z-index: 999;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media screen and (max-width: 768px) {
+      .hud-top {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .menu-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .mobile-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .dir-btn {
+        font-size: 24px;
+        padding: 15px 20px;
+        border-radius: 50%;
+        background-color: #444;
+        color: white;
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MENU SCREEN -->
+  <div id="menuScreen">
+    <div class="hud-top">
+      <div class="hud-box">
+        🧮 Score: <span id="menuScore">0</span>
+        <div class="subtext">🏆 Leaderboard</div>
+      </div>
+      <div class="hud-box">
+        💰 Money: $<span id="menuMoney">0</span>
+        <div class="subtext">🕒 Last Played: Today</div>
+      </div>
+    </div>
+
+    <div class="title-box">Zombie Shooter</div>
+
+    <div class="selected-display">
+      <div id="selectedCharEmoji" class="char-emoji animated">🧑</div>
+      <div id="selectedCharName" class="char-name">Mukesh</div>
+      <div id="weaponName" class="weapon-name">Pistol</div>
+    </div>
+
+    <button id="startButton" class="main-btn">▶️ Start Game</button>
+
+    <div class="menu-buttons">
+      <button id="characterSelectBtn" class="menu-btn">👥 Characters</button>
+      <button id="weaponSelectBtn" class="menu-btn">🔫 Weapons</button>
+      <button id="settingsBtn" class="menu-btn">⚙️ Settings</button>
+    </div>
+  </div>
+
+  <!-- CHARACTER SCREEN -->
+  <div id="characterScreen" class="popup-screen">
+    <h2>Select Character</h2>
+    <div id="characters">
+      <span class="char selected" data-name="Mukesh">🧑</span>
+      <span class="char" data-name="Ganesh">👨‍🚀</span>
+      <span class="char" data-name="Hrishekesh">🧙‍</span>
+      <span class="char" data-name="Dinesh">🧑‍🚒</span>
+      <span class="char" data-name="Suresh">🧛‍♂️</span>
+      <span class="char" data-name="Horo">🤖</span>
+      <span class="char" data-name="Jolly Tomy">👽</span>
+      <span class="char" data-name="Kshitij">🧑‍🎤<br>Kshitij</span>
+      <span class="char" data-name="PT Tikaram">🧟‍♂️</span>
+      <span class="char" data-name="Sanki Siddiqui">🕵️</span>
+    </div>
+    <button onclick="closeCharacterScreen()">✅ Done</button>
+  </div>
+
+  <!-- WEAPON SCREEN -->
+  <div id="weaponScreen" class="popup-screen">
+    <h2>Select Weapon</h2>
+    <div id="weapons">
+      <span class="weapon selected" data-name="Pistol">🔫<br>Pistol</span>
+      <span class="weapon" data-name="Shotgun">🔫<br>Shotgun</span>
+      <span class="weapon" data-name="Laser">🔦<br>Laser</span>
+      <span class="weapon" data-name="Rocket">🚀<br>Rocket</span>
+      <span class="weapon" data-name="Dual Blaster">🎮<br>Dual Blaster</span>
+    </div>
+    <button onclick="closeWeaponScreen()">✅ Done</button>
+  </div>
+
+  <!-- SETTINGS SCREEN -->
+  <div id="settingsScreen" class="popup-screen">
+    <h2>Settings</h2>
+    <label for="zombieSpeedRange">🧟 Zombie Speed:</label>
+    <input type="range" id="zombieSpeedRange" min="1" max="10" value="3" />
+    <span id="speedValue">3</span>
+    <br />
+    <button onclick="closeSettingsScreen()">✅ Done</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen">
+    <div id="hud">
+      <span id="score">Score: 0</span>
+      <span id="health">Health: 3</span>
+    </div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="mobileControls" class="mobile-controls">
+      <button class="dir-btn" data-key="ArrowLeft">⬅️</button>
+      <button class="dir-btn" data-key="ArrowRight">➡️</button>
+      <button class="dir-btn" data-key="ArrowUp">⬆️</button>
+      <button class="dir-btn" data-key="ArrowDown">⬇️</button>
+    </div>
+    <div id="gameOverScreen">
+      <h2>Game Over</h2>
+      <button id="restartButton">Restart</button>
+      <button id="menuButton">Menu</button>
+    </div>
+  </div>
+
+
+<script>
+window.onload = function () {
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const menuScreen = document.getElementById("menuScreen");
+  const gameScreen = document.getElementById("gameScreen");
+  const characterScreen = document.getElementById("characterScreen");
+  const weaponScreen = document.getElementById("weaponScreen");
+  const settingsScreen = document.getElementById("settingsScreen");
+  const startButton = document.getElementById("startButton");
+  const restartButton = document.getElementById("restartButton");
+  const menuButton = document.getElementById("menuButton");
+  const characterSelectBtn = document.getElementById("characterSelectBtn");
+  const weaponSelectBtn = document.getElementById("weaponSelectBtn");
+  const settingsBtn = document.getElementById("settingsBtn");
+  const characters = document.querySelectorAll(".char");
+  const weapons = document.querySelectorAll(".weapon");
+  const selectedCharEmoji = document.getElementById("selectedCharEmoji");
+  const selectedCharName = document.getElementById("selectedCharName");
+  const weaponNameEl = document.getElementById("weaponName");
+  const zombieSpeedRange = document.getElementById("zombieSpeedRange");
+  const speedValue = document.getElementById("speedValue");
+  const menuScore = document.getElementById("menuScore");
+  const menuMoney = document.getElementById("menuMoney");
+  const scoreEl = document.getElementById("score");
+  const healthEl = document.getElementById("health");
+  const gameOverScreen = document.getElementById("gameOverScreen");
+  const mobileButtons = document.querySelectorAll(".dir-btn");
+
+  // 🎵 Music
+  const menuMusic = new Audio('menu.mp3');
+  const gameMusic = new Audio('game.mp3');
+  const gameOverMusic = new Audio('gameover.mp3');
+  menuMusic.loop = true;
+  gameMusic.loop = true;
+
+  let selectedChar = { emoji: "🧑", name: "Mukesh" };
+  let selectedWeapon = "Pistol";
+  let player, bullets, zombies, keys, score, health, money, gameRunning;
+  let powerups = [];
+  let zombieSpeed = 3;
+
+  const zombieNames = [
+      "HORO", "JOLLY TOMY", "SIDDIQUI"
+  ];
+
+  characters.forEach(char => {
+    char.addEventListener("click", () => {
+      characters.forEach(c => c.classList.remove("selected"));
+      char.classList.add("selected");
+      selectedChar.emoji = char.textContent.split("\n")[0];
+      selectedChar.name = char.dataset.name;
+      selectedCharEmoji.textContent = selectedChar.emoji;
+      selectedCharName.textContent = selectedChar.name;
+    });
+  });
+
+  weapons.forEach(weapon => {
+    weapon.addEventListener("click", () => {
+      weapons.forEach(w => w.classList.remove("selected"));
+      weapon.classList.add("selected");
+      selectedWeapon = weapon.dataset.name;
+      weaponNameEl.textContent = selectedWeapon;
+    });
+  });
+
+  startButton.onclick = () => {
+    menuMusic.pause();
+    menuMusic.currentTime = 0;
+    gameMusic.play().catch(() => {
+      document.addEventListener('click', () => gameMusic.play(), { once: true });
+    });
+
+    menuScreen.style.display = "none";
+    gameScreen.style.display = "block";
+    startGame();
+  };
+
+  restartButton.onclick = () => {
+    gameOverMusic.pause();
+    gameOverMusic.currentTime = 0;
+    gameMusic.play();
+    gameOverScreen.style.display = "none";
+    startGame();
+  };
+
+  menuButton.onclick = () => {
+    gameMusic.pause();
+    gameMusic.currentTime = 0;
+    menuMusic.play();
+
+    gameScreen.style.display = "none";
+    menuScreen.style.display = "block";
+    gameOverScreen.style.display = "none";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  characterSelectBtn.onclick = () => characterScreen.style.display = "block";
+  weaponSelectBtn.onclick = () => weaponScreen.style.display = "block";
+  settingsBtn.onclick = () => settingsScreen.style.display = "block";
+
+  window.closeCharacterScreen = () => characterScreen.style.display = "none";
+  window.closeWeaponScreen = () => weaponScreen.style.display = "none";
+  window.closeSettingsScreen = () => settingsScreen.style.display = "none";
+
+  zombieSpeedRange.oninput = () => {
+    zombieSpeed = parseInt(zombieSpeedRange.value);
+    speedValue.textContent = zombieSpeed;
+  };
+
+  document.addEventListener("keydown", (e) => keys[e.code] = true);
+  document.addEventListener("keyup", (e) => keys[e.code] = false);
+  canvas.addEventListener("click", shoot);
+  canvas.addEventListener("touchstart", (e) => {
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    shoot({ offsetX: x, offsetY: y });
+  });
+
+  mobileButtons.forEach(btn => {
+    btn.addEventListener("touchstart", () => keys[btn.dataset.key] = true);
+    btn.addEventListener("touchend", () => keys[btn.dataset.key] = false);
+  });
+
+  function startGame() {
+    player = { x: 400, y: 550, size: 40 };
+    bullets = [];
+    zombies = [];
+    keys = {};
+    powerups = [];
+    score = 0;
+    money = 0;
+    health = 3;
+    gameRunning = true;
+    updateHUD();
+    spawnZombie();
+    spawnPowerup();
+    gameLoop();
+  }
+
+  function updateHUD() {
+    scoreEl.textContent = `Score: ${score}`;
+    healthEl.textContent = `Health: ${health}`;
+    menuScore.textContent = score;
+    menuMoney.textContent = money;
+  }
+
+  function gameLoop() {
+    if (!gameRunning) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (keys["ArrowLeft"]) player.x -= 5;
+    if (keys["ArrowRight"]) player.x += 5;
+    if (keys["ArrowUp"]) player.y -= 5;
+    if (keys["ArrowDown"]) player.y += 5;
+
+    // 🔁 Wrap-around logic
+    if (player.x < -player.size) player.x = canvas.width;
+    if (player.x > canvas.width) player.x = -player.size;
+    if (player.y < -player.size) player.y = canvas.height;
+    if (player.y > canvas.height) player.y = -player.size;
+
+    ctx.font = `22px Arial`;
+    ctx.fillText(selectedChar.emoji, player.x, player.y + player.size);
+
+    bullets.forEach((b, i) => {
+      b.x += b.dx;
+      b.y += b.dy;
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+      ctx.fill();
+      if (b.x < 0 || b.y < 0 || b.x > canvas.width || b.y > canvas.height) bullets.splice(i, 1);
+    });
+
+    zombies.forEach((z, zi) => {
+      const angle = Math.atan2(player.y - z.y, player.x - z.x);
+      z.x += z.speed * Math.cos(angle);
+      z.y += z.speed * Math.sin(angle);
+      ctx.font = "30px Arial";
+      ctx.font = "14px Arial";
+      ctx.fillStyle = "white";
+      ctx.fillText(z.name, z.x - 10, z.y);  // Adjust for horizontal centering
+
+      ctx.fillText("🧟", z.x, z.y + 30);
+
+      bullets.forEach((b, bi) => {
+        const dx = b.x - z.x;
+        const dy = b.y - z.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 25) {
+          zombies.splice(zi, 1);
+          bullets.splice(bi, 1);
+          score++;
+          updateHUD();
+        }
+      });
+
+      const dx = player.x - z.x;
+      const dy = player.y - z.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 30) {
+        zombies.splice(zi, 1);
+        health--;
+        updateHUD();
+        if (health <= 0) return gameOver();
+      }
+    });
+
+    powerups.forEach((p, pi) => {
+      ctx.font = "20px Arial";
+      ctx.fillText(p.symbol, p.x, p.y);
+
+      if (
+        player.x < p.x + 20 &&
+        player.x + player.size > p.x &&
+        player.y < p.y + 20 &&
+        player.y + player.size > p.y
+      ) {
+        if (p.type === "money") {
+          const value = Math.floor(Math.random() * 900) + 100;
+          money += value;
+        } else if (p.type === "health") {
+          health = Math.min(health + 1, 3);
+        }
+        updateHUD();
+        powerups.splice(pi, 1);
+      }
+    });
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  function spawnZombie() {
+    if (!gameRunning) return;
+    const edge = Math.random();
+    let x, y;
+    if (edge < 0.25) { x = Math.random() * canvas.width; y = -30; }
+    else if (edge < 0.5) { x = canvas.width + 30; y = Math.random() * canvas.height; }
+    else if (edge < 0.75) { x = Math.random() * canvas.width; y = canvas.height + 30; }
+    else { x = -30; y = Math.random() * canvas.height; }
+  
+    const name = zombieNames[Math.floor(Math.random() * zombieNames.length)];
+
+    zombies.push({ x, y, speed: zombieSpeed, name });
+    setTimeout(spawnZombie, 1000);
+  }
+
+  function spawnPowerup() {
+    if (!gameRunning) return;
+    const x = Math.random() * (canvas.width - 20);
+    const y = Math.random() * (canvas.height - 20);
+    const type = Math.random() > 0.5 ? "money" : "health";
+    const symbol = type === "money" ? "💰" : "❤️";
+    powerups.push({ x, y, type, symbol });
+    setTimeout(spawnPowerup, 7000);
+  }
+
+  function gameOver() {
+    gameRunning = false;
+    gameMusic.pause();
+    gameMusic.currentTime = 0;
+    gameOverMusic.play();
+    gameOverScreen.style.display = "block";
+  }
+
+  // 🔊 Play menu music on load
+  menuMusic.play().catch(() => {
+    document.addEventListener('click', () => menuMusic.play(), { once: true });
+  });
+};
+</script>
+
+
+</body>
+</html>
